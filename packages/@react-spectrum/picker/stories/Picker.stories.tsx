@@ -400,14 +400,14 @@ export const Scrolling: ScrollingStory = {
   name: 'scrolling container'
 };
 
-// Example of a story that breaks on render
-export const RenderError: PickerStory = {
-  args: {
-    children: <div>test</div>,
-    items: []
-  },
-  name: 'render error'
-};
+// // Example of a story that breaks on render
+// export const RenderError: PickerStory = {
+//   args: {
+//     children: <div>test</div>,
+//     items: []
+//   },
+//   name: 'render error'
+// };
 
 
 function DefaultPicker(props: SpectrumPickerProps<object>) {
