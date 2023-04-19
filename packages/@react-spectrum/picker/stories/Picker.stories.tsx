@@ -170,13 +170,16 @@ export default {
       config: {
         rules: [
           {
-            // // The following rule (aka focusable elements shouldn't be aria-hidden) will not run based on the CSS selector provided
-            // // TODO: the axe test still fails for some reason...
-            // id: 'aria-hidden-focus',
-            // selector: '*:not(#blah)'
-            // This one is too broad IMO
+            // Option 1: The following rule (aka focusable elements shouldn't be aria-hidden) will not run based on the CSS selector provided
+            // TODO: the axe test still fails for some reason, seems to cause a bunch of false positives
             id: 'aria-hidden-focus',
-            enabled: false
+            // selector: '*:not(#blah)'
+            // The below works better than the above, no false positives and excludes the hidden select
+            // ideally would have a selector target for the storybook's sb main body element
+            selector: 'body main *:not(#blah)'
+            // Option 2: This one is too broad IMO
+            // id: 'aria-hidden-focus',
+            // enabled: false
           }
         ]
       },
@@ -393,14 +396,14 @@ export const Scrolling: ScrollingStory = {
   name: 'scrolling container'
 };
 
-// Example of a story that breaks on render
-export const RenderError: PickerStory = {
-  args: {
-    children: <div>test</div>,
-    items: []
-  },
-  name: 'render error'
-};
+// // Example of a story that breaks on render
+// export const RenderError: PickerStory = {
+//   args: {
+//     children: <div>test</div>,
+//     items: []
+//   },
+//   name: 'render error'
+// };
 
 function DefaultPicker(props: SpectrumPickerProps<object>) {
   return (
