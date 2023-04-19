@@ -74,7 +74,7 @@ storiesOf('Button/ActionButton', module)
   .add(
     'staticColor: white',
     () => (
-      <View backgroundColor="static-seafoam-600" padding="size-1000">
+      <View backgroundColor="static-blue-700" padding="size-1000">
         <Flex direction="column" rowGap="size-150">
           <ActionButton staticColor="white">
             <Add />
@@ -112,11 +112,20 @@ storiesOf('Button/ActionButton', module)
         </Flex>
       </View>
     )
-  )
+  );
+
+storiesOf('Languages/ActionButton', module)
+  .addParameters({
+    chromaticProvider: {
+      colorSchemes: ['light'],
+      express: false,
+      locales: ['en-US', 'ja-JP'],
+      scales: ['large', 'medium']
+    }})
   .add(
     'Japanese, icon + text, staticColor: white',
     () => (
-      <View backgroundColor="static-seafoam-600" padding="size-1000">
+      <View backgroundColor="static-blue-700" padding="size-1000">
         <Flex direction="column" rowGap="size-150">
           <ActionButton staticColor="white">
             <Add />

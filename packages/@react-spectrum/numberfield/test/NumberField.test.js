@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+jest.mock('@react-aria/live-announcer');
 import {act, fireEvent, render, triggerPress, typeText, within} from '@react-spectrum/test-utils';
+import {announce} from '@react-aria/live-announcer';
+import {Button} from '@react-spectrum/button';
 import {chain} from '@react-aria/utils';
 import messages from '../../../@react-aria/numberfield/intl/*';
 import {NumberField} from '../';
@@ -45,6 +48,7 @@ describe('NumberField', function () {
     onBlurSpy.mockClear();
     onKeyDownSpy.mockClear();
     onKeyUpSpy.mockClear();
+    announce.mockClear();
     // there's an announcer, make sure to run through it
     // make sure only to run the pending timers, spin button can cause an infinite loop if we run all
     act(() => {jest.runOnlyPendingTimers();});
@@ -98,7 +102,7 @@ describe('NumberField', function () {
     let ref = React.createRef();
     let {container, textField} = renderNumberField({ref});
 
-    expect(ref.current.UNSAFE_getDOMNode()).toBe(container);
+    expect(ref.current.UNSAFE_getDOMNode()).toBe(container.parentElement);
     act(() => {
       ref.current.focus();
     });
@@ -182,8 +186,7 @@ describe('NumberField', function () {
     expect(onChangeSpy).toHaveBeenCalledWith(52);
   });
 
-  // TODO: this doesn't work in Node 12 but it does in 13, once we can move to that in circle ci this can be un-skipped
-  it.skip.each`
+  it.each`
     Name
     ${'NumberField'}
   `('$Name switches to numeric for percentages', () => {
@@ -872,12 +875,18 @@ describe('NumberField', function () {
     expect(textField).toHaveAttribute('value', '($9.00)');
     expect(onChangeSpy).toHaveBeenCalledTimes(1);
     expect(onChangeSpy).toHaveBeenCalledWith(-9);
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenLastCalledWith('−$9.00', 'assertive');
 
     act(() => {textField.focus();});
     textField.setSelectionRange(2, 3);
     userEvent.type(textField, '{backspace}');
+    expect(announce).toHaveBeenCalledTimes(2);
+    expect(announce).toHaveBeenLastCalledWith('−$0.00', 'assertive');
     textField.setSelectionRange(2, 2);
     typeText(textField, '1');
+    expect(announce).toHaveBeenCalledTimes(3);
+    expect(announce).toHaveBeenLastCalledWith('−$1.00', 'assertive');
     textField.setSelectionRange(3, 3);
     typeText(textField, '8');
     expect(textField).toHaveAttribute('value', '($18.00)');
@@ -885,11 +894,15 @@ describe('NumberField', function () {
     expect(textField).toHaveAttribute('value', '($18.00)');
     expect(onChangeSpy).toHaveBeenCalledTimes(2);
     expect(onChangeSpy).toHaveBeenLastCalledWith(-18);
+    expect(announce).toHaveBeenCalledTimes(4);
+    expect(announce).toHaveBeenLastCalledWith('−$18.00', 'assertive');
 
     act(() => {textField.focus();});
     textField.setSelectionRange(7, 8);
     userEvent.type(textField, '{backspace}');
     expect(textField).toHaveAttribute('value', '($18.00');
+    expect(announce).toHaveBeenCalledTimes(5);
+    expect(announce).toHaveBeenLastCalledWith('$18.00', 'assertive');
     act(() => {textField.blur();});
     expect(textField).toHaveAttribute('value', '$18.00');
     expect(onChangeSpy).toHaveBeenCalledTimes(3);
@@ -897,8 +910,12 @@ describe('NumberField', function () {
 
     act(() => {textField.focus();});
     userEvent.clear(textField);
+    expect(announce).toHaveBeenCalledTimes(6);
+    expect(announce).toHaveBeenLastCalledWith('Empty', 'assertive');
     typeText(textField, '($32)');
     expect(textField).toHaveAttribute('value', '($32)');
+    expect(announce).toHaveBeenCalledTimes(9);
+    expect(announce).toHaveBeenLastCalledWith('−$32.00', 'assertive');
     act(() => {textField.blur();});
     expect(textField).toHaveAttribute('value', '($32.00)');
     expect(onChangeSpy).toHaveBeenCalledTimes(4);
@@ -914,6 +931,8 @@ describe('NumberField', function () {
     act(() => {textField.focus();});
     userEvent.type(textField, '(10)');
     expect(textField).toHaveAttribute('value', '(10)');
+    expect(announce).toHaveBeenCalledTimes(3);
+    expect(announce).toHaveBeenLastCalledWith('؜−١٠٫٠٠ US$', 'assertive');
     act(() => {textField.blur();});
     expect(textField).toHaveAttribute('value', '(US$10.00)');
     expect(onChangeSpy).toHaveBeenCalledTimes(1);
@@ -935,17 +954,25 @@ describe('NumberField', function () {
     expect(textField).toHaveAttribute('value', '-9,00 $');
     expect(onChangeSpy).toHaveBeenCalledTimes(1);
     expect(onChangeSpy).toHaveBeenCalledWith(-9);
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenLastCalledWith('−9,00 $', 'assertive');
 
     act(() => {
       textField.focus();
     });
     textField.setSelectionRange(1, 2);
     userEvent.type(textField, '{backspace}');
+    expect(announce).toHaveBeenCalledTimes(2);
+    expect(announce).toHaveBeenLastCalledWith('−0,00 $', 'assertive');
     textField.setSelectionRange(1, 1);
     typeText(textField, '1');
+    expect(announce).toHaveBeenCalledTimes(3);
+    expect(announce).toHaveBeenLastCalledWith('−1,00 $', 'assertive');
     textField.setSelectionRange(2, 2);
     typeText(textField, '8');
     expect(textField).toHaveAttribute('value', '-18,00 $');
+    expect(announce).toHaveBeenCalledTimes(4);
+    expect(announce).toHaveBeenLastCalledWith('−18,00 $', 'assertive');
     act(() => {
       textField.blur();
     });
@@ -1710,13 +1737,12 @@ describe('NumberField', function () {
         </Provider>
       );
     }
-    let {container} = render(<NumberFieldControlled onChange={onChangeSpy} />);
+    let {container, getByRole} = render(<NumberFieldControlled onChange={onChangeSpy} />);
     container = within(container).queryByRole('group');
-    let textField = container.firstChild;
+    let textField = getByRole('textbox');
     let buttons = within(container).queryAllByRole('button');
     let incrementButton = buttons[0];
     let decrementButton = buttons[1];
-    textField = textField.firstChild;
     expect(textField).toHaveAttribute('value', '€10.00');
     triggerPress(incrementButton);
     expect(textField).toHaveAttribute('value', '€11.00');
@@ -2155,5 +2181,31 @@ describe('NumberField', function () {
         expect(textField).toHaveAttribute('value', '123.456.789');
       });
     });
+  });
+
+  it('can be reset to blank using null', () => {
+    function NumberFieldControlled(props) {
+      let {onChange} = props;
+      let [value, setValue] = useState(10);
+      return (
+        <Provider theme={theme} scale="medium" locale="en-US">
+          <NumberField {...props} label="reset to blank using null" value={value} onChange={value => setValue(value)} />
+          <Button
+            variant={'primary'}
+            onPress={() => chain(setValue(null), onChange())}>
+            Reset
+          </Button>
+        </Provider>
+      );
+    }
+    let resetSpy = jest.fn();
+    let {getByText, getByRole} = render(<NumberFieldControlled onChange={resetSpy} />);
+    let textField = getByRole('textbox');
+    let resetButton = getByText('Reset');
+
+    expect(textField).toHaveAttribute('value', '10');
+    triggerPress(resetButton);
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(textField).toHaveAttribute('value', '');
   });
 });

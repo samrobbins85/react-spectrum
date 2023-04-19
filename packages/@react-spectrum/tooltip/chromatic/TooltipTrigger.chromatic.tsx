@@ -31,7 +31,8 @@ export default {
       colorSchemes: ['light'],
       locales: ['en-US'],
       scales: ['medium'],
-      disableAnimations: true
+      disableAnimations: true,
+      express: false
     },
     // chromatic needs a bit more time than disableAnimations allows
     chromatic: {
@@ -56,6 +57,16 @@ export const Offset50: TooltipTriggerStory = {
 
 export const CrossOffset50: TooltipTriggerStory = {
   args: {crossOffset: 50}
+};
+
+// Test case where putting the arrow in the center of the button is no lnger viable
+export const CrossOffset70: TooltipTriggerStory = {
+  args: {crossOffset: 70}
+};
+
+// Test case where putting the arrow in the center of the button is no lnger viable
+export const CrossOffset1000: TooltipTriggerStory = {
+  args: {crossOffset: 1000}
 };
 
 export const ContainerPadding50AtEdge: TooltipTriggerStory = {

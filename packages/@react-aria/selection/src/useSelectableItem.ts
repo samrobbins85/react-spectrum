@@ -67,6 +67,8 @@ export interface SelectableItemStates {
   isPressed: boolean,
   /** Whether the item is currently selected. */
   isSelected: boolean,
+  /** Whether the item is currently focused. */
+  isFocused: boolean,
   /**
    * Whether the item is non-interactive, i.e. both selection and actions are disabled and the item may
    * not be focused. Dependent on `disabledKeys` and `disabledBehavior`.
@@ -137,21 +139,22 @@ export function useSelectableItem(options: SelectableItemOptions): SelectableIte
   // Focus the associated DOM node when this item becomes the focusedKey
   useEffect(() => {
     let isFocused = key === manager.focusedKey;
-    if (isFocused && manager.isFocused && !shouldUseVirtualFocus && document.activeElement !== ref.current) {
+    if (isFocused && manager.isFocused && !shouldUseVirtualFocus) {
       if (focus) {
         focus();
-      } else {
+      } else if (document.activeElement !== ref.current) {
         focusSafely(ref.current);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, key, manager.focusedKey, manager.childFocusStrategy, manager.isFocused, shouldUseVirtualFocus]);
 
+  isDisabled = isDisabled || manager.isDisabled(key);
   // Set tabIndex to 0 if the element is focused, or -1 otherwise so that only the last focused
   // item is tabbable.  If using virtual focus, don't set a tabIndex at all so that VoiceOver
   // on iOS 14 doesn't try to move real DOM focus to the item anyway.
   let itemProps: SelectableItemAria['itemProps'] = {};
-  if (!shouldUseVirtualFocus) {
+  if (!shouldUseVirtualFocus && !isDisabled) {
     itemProps = {
       tabIndex: key === manager.focusedKey ? 0 : -1,
       onFocus(e) {
@@ -160,14 +163,17 @@ export function useSelectableItem(options: SelectableItemOptions): SelectableIte
         }
       }
     };
+  } else if (isDisabled) {
+    itemProps.onMouseDown = (e) => {
+      // Prevent focus going to the body when clicking on a disabled item.
+      e.preventDefault();
+    };
   }
-
 
   // With checkbox selection, onAction (i.e. navigation) becomes primary, and occurs on a single click of the row.
   // Clicking the checkbox enters selection mode, after which clicking anywhere on any row toggles selection for that row.
   // With highlight selection, onAction is secondary, and occurs on double click. Single click selects the row.
   // With touch, onAction occurs on single tap, and long press enters selection mode.
-  isDisabled = isDisabled || manager.isDisabled(key);
   let allowsSelection = !isDisabled && manager.canSelectItem(key);
   let allowsActions = onAction && !isDisabled;
   let hasPrimaryAction = allowsActions && (
@@ -308,6 +314,7 @@ export function useSelectableItem(options: SelectableItemOptions): SelectableIte
     ),
     isPressed,
     isSelected: manager.isSelected(key),
+    isFocused: manager.isFocused && manager.focusedKey === key,
     isDisabled,
     allowsSelection,
     hasAction

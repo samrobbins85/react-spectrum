@@ -80,7 +80,8 @@ export default {
   excludeStories: [],
   args: {
     'label': 'Test',
-    onSelectionChange: action('onSelectionChange')
+    onSelectionChange: action('onSelectionChange'),
+    onOpenChange: action('onOpenChange')
   },
   argTypes: {
     layout: {
@@ -93,6 +94,16 @@ export default {
         disable: true
       }
     },
+    onSelectionChange: {
+      table: {
+        disable: true
+      }
+    },
+    onOpenChange: {
+      table: {
+        disable: true
+      }
+    },
     label: {
       control: 'text'
     },
@@ -100,31 +111,25 @@ export default {
       control: 'text'
     },
     errorMessage: {
-      control: 'text',
-      defaultValue: 'Create a password with at least 8 characters.'
+      control: 'text'
     },
     isDisabled: {
-      control: 'boolean',
-      defaultValue: false
+      control: 'boolean'
     },
     labelAlign: {
       control: 'radio',
-      defaultValue: 'start',
       options: ['end', 'start']
     },
     labelPosition: {
       control: 'radio',
-      defaultValue: 'top',
       options: ['side', 'top']
     },
     necessityIndicator: {
       control: 'radio',
-      defaultValue: 'icon',
       options: ['icon', 'label']
     },
     isRequired: {
-      control: 'boolean',
-      defaultValue: false
+      control: 'boolean'
     },
     validationState: {
       control: {
@@ -133,8 +138,7 @@ export default {
       }
     },
     isQuiet: {
-      control: 'boolean',
-      defaultValue: false
+      control: 'boolean'
     },
     width: {
       control: {
@@ -149,12 +153,16 @@ export default {
       }
     },
     isLoading: {
-      control: 'boolean',
-      defaultValue: false
+      control: 'boolean'
     },
     autoFocus: {
-      control: 'boolean',
-      defaultValue: false
+      control: 'boolean'
+    },
+    isOpen: {
+      control: 'boolean'
+    },
+    defaultOpen: {
+      control: 'boolean'
     }
   },
   parameters: {
@@ -188,6 +196,11 @@ Default.play = async ({canvasElement}) => {
   await userEvent.click(button);
   let body = canvasElement.ownerDocument.body;
   await within(body).findByRole('listbox');
+};
+
+export const Disabled: DefaultStory = {
+  render: (args) => <DefaultPicker {...args} disabledKeys={['Short']} />,
+  name: 'disabled keys'
 };
 
 export const Sections: PickerStory = {
@@ -290,26 +303,6 @@ export const ContextualHelpPicker: PickerStory = {
   name: 'contextual help'
 };
 
-export const ControlledOpen: PickerStory = {
-  args: {
-    children: (item: any) => <Item>{item.name}</Item>,
-    items: flatOptions,
-    isOpen: true,
-    onOpenChange: action('onOpenChange')
-  },
-  name: 'isOpen (controlled)'
-};
-
-export const DefaultOpen: PickerStory = {
-  args: {
-    children: (item: any) => <Item>{item.name}</Item>,
-    items: flatOptions,
-    defaultOpen: true,
-    onOpenChange: action('onOpenChange')
-  },
-  name: 'defaultOpen (uncontrolled)'
-};
-
 export const SelectedKey: PickerStory = {
   args: {
     children: (item: any) => <Item>{item.name}</Item>,
@@ -339,18 +332,18 @@ export const Loading: PickerStory = {
 
 export type AsyncLoadingStory = ComponentStoryObj<typeof AsyncLoadingExample>;
 export const AsyncLoading: AsyncLoadingStory = {
-  render: () => <AsyncLoadingExample />,
+  render: (args) => <AsyncLoadingExample {...args} />,
   name: 'async loading'
 };
 
 export type FocusStory = ComponentStoryObj<any>;
 export const Focus: FocusStory = {
-  render: () => (
+  render: (args) => (
     <div style={{display: 'flex', width: 'auto', margin: '250px 0'}}>
       <label htmlFor="focus-before">Focus before</label>
       <input id="focus-before" data-testid="before" />
-      <Picker label="Focus-Test" items={flatOptions} autoFocus onFocus={action('focus')} onBlur={action('blur')} onKeyDown={action('keydown')} onKeyUp={action('keyup')}>
-        {item => <Item>{item.name}</Item>}
+      <Picker {...args} label="Focus-Test" items={flatOptions} onFocus={action('focus')} onBlur={action('blur')} onKeyDown={action('keydown')} onKeyUp={action('keyup')}>
+        {(item: any) => <Item>{item.name}</Item>}
       </Picker>
       <label htmlFor="focus-after">Focus after</label>
       <input id="focus-after" data-testid="after" />
@@ -380,16 +373,16 @@ Focus.play = async ({canvasElement}) => {
 
 export type ResizePickerStory = ComponentStoryObj<typeof ResizePicker>;
 export const Resize: ResizePickerStory = {
-  render: () => <ResizePicker />,
+  render: (args) => <ResizePicker {...args} />,
   name: 'resize'
 };
 
 export type ScrollingStory = ComponentStoryObj<any>;
 export const Scrolling: ScrollingStory = {
-  render: () => (
+  render: (args) => (
     <View width="300px" height="size-500" overflow="auto">
       <View width="500px">
-        <Picker label="Test" autoFocus>
+        <Picker {...args} label="Test">
           <Item key="One">One</Item>
           <Item key="Two">Two</Item>
           <Item key="Three">Three</Item>
@@ -400,15 +393,14 @@ export const Scrolling: ScrollingStory = {
   name: 'scrolling container'
 };
 
-// // Example of a story that breaks on render
-// export const RenderError: PickerStory = {
-//   args: {
-//     children: <div>test</div>,
-//     items: []
-//   },
-//   name: 'render error'
-// };
-
+// Example of a story that breaks on render
+export const RenderError: PickerStory = {
+  args: {
+    children: <div>test</div>,
+    items: []
+  },
+  name: 'render error'
+};
 
 function DefaultPicker(props: SpectrumPickerProps<object>) {
   return (
@@ -456,7 +448,7 @@ function ComplexItemsPicker(props: SpectrumPickerProps<object>) {
   );
 }
 
-function AsyncLoadingExample() {
+function AsyncLoadingExample(props) {
   interface Pokemon {
     name: string,
     url: string
@@ -476,19 +468,19 @@ function AsyncLoadingExample() {
   });
 
   return (
-    <Picker label="Pick a Pokemon" items={list.items} isLoading={list.isLoading} onLoadMore={list.loadMore}>
-      {item => <Item key={item.name}>{item.name}</Item>}
+    <Picker {...props} label="Pick a Pokemon" items={list.items} isLoading={list.isLoading} onLoadMore={list.loadMore}>
+      {(item: any) => <Item key={item.name}>{item.name}</Item>}
     </Picker>
   );
 }
 
-function ResizePicker() {
+function ResizePicker(props) {
   const [state, setState] = useState(true);
 
   return (
     <Flex direction="column" gap="size-200" alignItems="start">
       <div style={{width: state ? '200px' : '300px'}}>
-        <Picker label="Choose A" width="100%">
+        <Picker {...props} label="Choose A" width="100%">
           <Item key="A1">A1</Item>
           <Item key="A2">A2</Item>
           <Item key="A3">A3</Item>
